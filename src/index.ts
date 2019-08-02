@@ -1,7 +1,13 @@
+/**
+ * @author Robin Sun
+ * @email robin@naturewake.com
+ * @create date 2019-06-13 15:43:38
+ * @modify date 2019-06-13 15:43:38
+ * @desc [description]
+ */
 import * as querystring from 'querystring'
 import * as request from 'isomorphic-fetch'
-import * as utils from 'sardines-utils'
-import { Http } from 'sardines-utils'
+import { utils, Http } from 'sardines-core'
 
 
 const Middlewares: any[] = []
@@ -11,7 +17,7 @@ const ParallelProcesses: any[] = []
 
 
 
-export class HttpServiceDriver {
+export default class HttpServiceDriver {
     private providerInfo: Http.ServiceProviderPublicInfo
 
     constructor(providerInfo: Http.ServiceProviderPublicInfo) {
@@ -61,7 +67,7 @@ export class HttpServiceDriver {
         params.credentials = 'include'
 
         const response: Http.ServiceResponse = Object.assign({}, {
-            type: Http.ServiceResponseType.JSON,
+            type: Http.ServiceResponseType.json,
         }, serviceSettings.response)
 
         if (ParallelProcesses.length > 0) {
@@ -129,7 +135,7 @@ export class HttpServiceDriver {
                     try {
                         let result = null
                         switch (response.type.toLocaleLowerCase()) {
-                        case Http.ServiceResponseType.JSON:
+                        case Http.ServiceResponseType.json:
                             result = res.json()
                             break
                         case Http.ServiceResponseType.text: case Http.ServiceResponseType.string:

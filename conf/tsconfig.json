@@ -14,7 +14,9 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "target": "es5",
-        "lib": ["es2015", "dom"]
+        "lib": ["es2015", "dom"],
+        "declarationDir": "../lib",
+        "outDir": "../lib"
     },
     "include": [
         "../src/**/*"
