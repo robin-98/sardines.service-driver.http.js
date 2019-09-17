@@ -5,17 +5,29 @@
  * @modify date 2019-06-13 15:43:38
  * @desc [description]
  */
-import * as querystring from 'querystring'
-import * as request from 'isomorphic-fetch'
-import { utils, Http } from 'sardines-core'
 
+
+import * as querystring from 'querystring'
+import { utils, Http, Sardines } from 'sardines-core'
+
+import fetch from 'cross-fetch';
+// Using CommonJS modules
+// require('cross-fetch/polyfill');
 
 const Middlewares: any[] = []
 const GroupProcesses: any[] = []
 const PostProcesses: any[] = []
 const ParallelProcesses: any[] = []
 
-
+interface HttpRequestParam {
+    method?: string; 
+    headers?: any; 
+    body?: any; 
+    query?: any; 
+    mode?: RequestMode; 
+    credentials?: RequestCredentials; 
+    abort?: boolean
+}
 
 export default class HttpServiceDriver {
     private providerInfo: Http.ServiceProviderPublicInfo
@@ -52,9 +64,46 @@ export default class HttpServiceDriver {
         }
     }
 
+    getDefaultHttpServiceSettings(application: string, serviceSettings: Sardines.Service): Http.ServiceSettings {
+        let httpServiceSettings: Http.ServiceSettings = {}
+        httpServiceSettings.path = `/${application}/${serviceSettings.module}/${serviceSettings.name}`.replace(/\/+/g, '/')
+        httpServiceSettings.method = Http.Method.POST
+        switch(serviceSettings.returnType) {
+        case 'string':
+            httpServiceSettings.response = { type: Http.ServiceResponseType.string }
+            break
+        case 'number':
+            httpServiceSettings.response = { type: Http.ServiceResponseType.number }
+            break
+        case 'boolean':
+            httpServiceSettings.response = { type: Http.ServiceResponseType.boolean }
+            break
+        case 'any': default:
+            httpServiceSettings.response = { type: Http.ServiceResponseType.json }
+            break
+        }
+
+        httpServiceSettings.inputParameters = []
+        for (let arg of serviceSettings.arguments) {
+            let param: Http.ServiceInputParameter = {
+                name: arg.name,
+                position: Http.ServiceInputParamPosition.body
+            }
+            if (arg.type in ['string', 'number', 'boolean']) {
+                param.type = Http.ServiceInputParamType[arg.type as keyof typeof Http.ServiceInputParamType]
+            } else {
+                param.type = Http.ServiceInputParamType.object
+            }
+            httpServiceSettings.inputParameters.push(param)
+        }
+        return httpServiceSettings
+    }
     // Invoke
     // return a promise
-    invokeService(serviceSettings: Http.ServiceSettings, parameters: any[]) {
+    invokeService(application: string, originalServiceSettings: Http.ServiceSettings|Sardines.Service, ...parameters: any[]) {
+        let serviceSettings: Http.ServiceSettings = 'path' in originalServiceSettings 
+                ? <Http.ServiceSettings>originalServiceSettings
+                : this.getDefaultHttpServiceSettings(application, <Sardines.Service>originalServiceSettings)
         let addr = this.assembleAddress(serviceSettings)
         const params = this.assembleParameters(serviceSettings, parameters)
         if (params.query) {
@@ -124,7 +173,7 @@ export default class HttpServiceDriver {
 
             // Group jobs are jobs must all succeed, otherwise fail as a whole
             const jobs = [
-                request(addr, <RequestInit>params)
+                fetch(addr, params)
                 .then((res: { status: number; statusText: any; json: () => void; text: () => void; formData: () => void; }) => {
                     if (res.status !== 200) {
                         errMsg = {
@@ -224,7 +273,7 @@ export default class HttpServiceDriver {
 
     // Assemble parameters
     assembleParameters(service: Http.ServiceSettings, parameters: any[]) {
-        let params: {method?: string; headers?: any; body?: any; query?: any; mode?: string; credentials?: RequestCredentials; abort?: boolean} = {},
+        let params: HttpRequestParam = {},
         // let params: RequestInit = {},
             headers: {'Content-Type'?: string; cookie?: string; [key: string]: any} = { 
                 'Content-Type': 'application/json',
@@ -283,7 +332,7 @@ export default class HttpServiceDriver {
                 headers.cookie = headers.cookie ? headers.cookie + cstr : cstr 
             }
         }
-        params.headers = new Headers(headers)
+        params.headers = headers
         if (body) {
             params.body = JSON.stringify(body)
         }
