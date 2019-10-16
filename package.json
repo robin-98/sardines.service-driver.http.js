@@ -39,7 +39,7 @@
     },
     "scripts": {
         "webpack": "npm run clear && webpack-cli --config webpack.config.js",
-        "build": "npm run webpack && tsc --build tsconfig.json",
+        "build": "npm run clear && npm run webpack && tsc --build tsconfig.json",
         "prepublish": "npm run build",
         "clear": "rm -rf lib/*"
     },
