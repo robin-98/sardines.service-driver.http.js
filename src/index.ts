@@ -180,6 +180,7 @@ export default class HttpServiceDriver {
                             status: res.status,
                             message: res.statusText,
                         }
+                        throw errMsg
                     }
                     try {
                         let result = null
