@@ -175,12 +175,12 @@ export default class HttpServiceDriver {
             const jobs = [
                 fetch(addr, params)
                 .then((res: { status: number; statusText: any; json: () => void; text: () => void; formData: () => void; }) => {
-                    if (res.status !== 200) {
+                    if (res.status >= 400) {
                         errMsg = {
                             status: res.status,
                             message: res.statusText,
                         }
-                        throw errMsg
+                        throw utils.unifyErrMesg(errMsg, 'servicde driver', 'request')
                     }
                     try {
                         let result = null

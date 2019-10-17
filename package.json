@@ -11,7 +11,7 @@
         "@types/node": "^12.7.1",
         "cross-fetch": "^3.0.4",
         "querystring": "^0.2.0",
-        "sardines-core": "^0.3.14",
+        "sardines-core": "*",
         "typescript": "^3.4.5"
     },
     "description": "This is a built-in service driver for sardines.js",
