@@ -64,30 +64,79 @@ export default class HttpServiceDriver {
         }
     }
 
-    getDefaultHttpServiceSettings(application: string, serviceSettings: Sardines.Service): Http.ServiceSettings {
-        let httpServiceSettings: Http.ServiceSettings = {}
-        httpServiceSettings.path = `/${application}/${serviceSettings.module}/${serviceSettings.name}`.replace(/\/+/g, '/')
-        httpServiceSettings.method = Http.Method.POST
-        switch(serviceSettings.returnType) {
-        case 'string':
-            httpServiceSettings.response = { type: Http.ServiceResponseType.string }
-            break
-        case 'number':
-            httpServiceSettings.response = { type: Http.ServiceResponseType.number }
-            break
-        case 'boolean':
-            httpServiceSettings.response = { type: Http.ServiceResponseType.boolean }
-            break
-        case 'any': default:
-            httpServiceSettings.response = { type: Http.ServiceResponseType.json }
-            break
+    getDefaultHttpServiceSettings(serviceSettings: Sardines.Runtime.Service): Http.ServiceSettings {
+        if (!serviceSettings.identity || !serviceSettings.identity.application || !serviceSettings.identity.module || !serviceSettings.identity.name) {
+            throw utils.unifyErrMesg(`Invalid service settings`, 'service driver', 'service settings')
+        }
+        let serviceIdentity: Sardines.ServiceIdentity = serviceSettings.identity
+        let providerSettings: any = serviceSettings.entries && serviceSettings.entries.length
+                                    ? serviceSettings.entries[0].settingsForProvider
+                                    : null
+        let httpServiceSettings: any = {}
+        let additionalArgumentSettings : any = null
+        let root = '/'
+        let method = Http.Method.POST
+        let path = `/${serviceIdentity.application}/${serviceIdentity.module}/${serviceIdentity.name}`
+        if (providerSettings) {
+            Object.assign(httpServiceSettings, providerSettings)
+            if (httpServiceSettings.arguments) {
+                additionalArgumentSettings = httpServiceSettings.arguments
+                delete httpServiceSettings.arguments
+            }
+            if (providerSettings.root) {
+                root = providerSettings.root
+            }
+            if (providerSettings.method) {
+                method = providerSettings.method
+            }
+            if (providerSettings.path) {
+                path = providerSettings.path
+            }
+        }
+
+        httpServiceSettings.path = `${root}/${path}`.replace(/\/+/g, '/')
+        httpServiceSettings.method = method
+        httpServiceSettings.response = { type: Http.ServiceResponseType.json }
+        if ( serviceSettings.returnType ) {
+            switch(serviceSettings.returnType) {
+            case 'string':
+                httpServiceSettings.response = { type: Http.ServiceResponseType.string }
+                break
+            case 'number':
+                httpServiceSettings.response = { type: Http.ServiceResponseType.number }
+                break
+            case 'boolean':
+                httpServiceSettings.response = { type: Http.ServiceResponseType.boolean }
+                break
+            case 'any': default:
+                httpServiceSettings.response = { type: Http.ServiceResponseType.json }
+                break
+            }
         }
 
         httpServiceSettings.inputParameters = []
-        for (let arg of serviceSettings.arguments) {
+        let tmpArgs: any[] = []
+        if (serviceSettings.arguments && serviceSettings.arguments!.length) {
+            for (let serviceArg of serviceSettings.arguments!) {
+                let arg:any = serviceArg
+                if (additionalArgumentSettings) {
+                    for (let addArg of additionalArgumentSettings) {
+                        if (addArg && addArg.name && arg.name && arg.name === addArg.name) {
+                            arg = addArg
+                        } else if (addArg && arg && !arg.name && !addArg.name) {
+                            arg = addArg
+                        }
+                    }
+                }
+                tmpArgs.push(arg)
+            }
+        } else if (additionalArgumentSettings){
+            tmpArgs = additionalArgumentSettings
+        }
+        for (let arg of tmpArgs) {
             let param: Http.ServiceInputParameter = {
                 name: arg.name,
-                position: Http.ServiceInputParamPosition.body
+                position: arg.position || Http.ServiceInputParamPosition.body
             }
             if (arg.type in ['string', 'number', 'boolean']) {
                 param.type = Http.ServiceInputParamType[arg.type as keyof typeof Http.ServiceInputParamType]
@@ -100,10 +149,10 @@ export default class HttpServiceDriver {
     }
     // Invoke
     // return a promise
-    invokeService(application: string, originalServiceSettings: Http.ServiceSettings|Sardines.Service, ...parameters: any[]) {
+    invokeService(originalServiceSettings: Http.ServiceSettings|Sardines.Runtime.Service, ...parameters: any[]) {
         let serviceSettings: Http.ServiceSettings = 'path' in originalServiceSettings 
                 ? <Http.ServiceSettings>originalServiceSettings
-                : this.getDefaultHttpServiceSettings(application, <Sardines.Service>originalServiceSettings)
+                : this.getDefaultHttpServiceSettings(<Sardines.Runtime.Service>originalServiceSettings)
         let addr = this.assembleAddress(serviceSettings)
         const params = this.assembleParameters(serviceSettings, parameters)
         if (params.query) {
