@@ -29,7 +29,7 @@ interface HttpRequestParam {
     abort?: boolean
 }
 
-class HttpServiceDriver {
+export default class HttpServiceDriver {
     private providerInfo: Http.ServiceProviderPublicInfo
 
     constructor(providerInfo: Http.ServiceProviderPublicInfo) {
@@ -392,4 +392,5 @@ class HttpServiceDriver {
     }
 }
 
-module.exports = HttpServiceDriver
+// to be compatible with CommonJS
+export const Class = HttpServiceDriver
