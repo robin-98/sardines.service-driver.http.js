@@ -392,5 +392,5 @@ export default class HttpServiceDriver {
     }
 }
 
-// to be compatible with CommonJS
+// to be compatible with CommonJS export
 export const Class = HttpServiceDriver
