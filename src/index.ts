@@ -229,7 +229,8 @@ export class Class {
                             status: res.status,
                             message: res.statusText,
                             address: addr,
-                            fetchParameters: params
+                            fetchParameters: params,
+                            response: res
                         }
                         throw utils.unifyErrMesg(errMsg, 'service driver', 'request')
                     }
