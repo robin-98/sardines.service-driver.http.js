@@ -29,7 +29,7 @@ interface HttpRequestParam {
     abort?: boolean
 }
 
-export class Class {
+export default class HttpServiceDriver {
     private providerInfo: Http.ServiceProviderPublicInfo
 
     constructor(providerInfo: Http.ServiceProviderPublicInfo) {
