@@ -228,8 +228,10 @@ export class Class {
                         errMsg = {
                             status: res.status,
                             message: res.statusText,
+                            address: addr,
+                            fetchParameters: params
                         }
-                        throw utils.unifyErrMesg(errMsg, 'servicde driver', 'request')
+                        throw utils.unifyErrMesg(errMsg, 'service driver', 'request')
                     }
                     try {
                         let result = null
@@ -252,7 +254,7 @@ export class Class {
                         )
                     }
                 }, (err: any) => {
-                    throw utils.unifyErrMesg(err, 'servicde driver', 'request')
+                    throw utils.unifyErrMesg(err, 'service driver', 'request')
                 })
                 .then(async (payload: any) => {
                     let err = null
