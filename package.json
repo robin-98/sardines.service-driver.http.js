@@ -43,5 +43,5 @@
         "prepublish": "npm run build",
         "clear": "rm -rf lib/*"
     },
-    "version": "1.0.8"
+    "version": "1.0.9"
 }
